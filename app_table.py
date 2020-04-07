@@ -30,6 +30,9 @@ df['win'] = df['win'].astype(int)
 # merge with champion dataframe ---------------------------------------------------------------
 
 df_champions = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions.csv')
+df_champions = df_champions.sort_values(by='champion')
+
+lst_champ_names = df_champions.champion.values
 df = df.merge(df_champions, how = 'inner', on = 'championId')
 
 
@@ -65,9 +68,9 @@ df = df.drop( columns = ['numberOfGames'] )
 
 # start creating the figures ------------------------------------------------------------------------------------------
 
-fig = px.scatter(df, x='KDA', y="dmgShare", color="win", hover_data=['champion'])
+# fig = px.scatter(df, x='KDA', y="dmgShare", color="win", hover_data=['champion'])
 # fig2 = px.bar(df_per_champ, x  = 'championId', y = 'win', hover_data=['champion'])
-fig2 = px.scatter(df_per_champ, x  = 'win', y = 'KDA', color = 'dmgShare', hover_data=['champion', 'dmgShare'], size= 'numberOfGames')
+# fig2 = px.scatter(df_per_champ, x  = 'win', y = 'KDA', color = 'dmgShare', hover_data=['champion', 'dmgShare'], size= 'numberOfGames')
 
 
 
@@ -101,7 +104,7 @@ def generate_table(dataframe, max_rows=10):
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__) #, external_stylesheets=external_stylesheets
 
 app.layout = html.Div( children = [
 
@@ -124,15 +127,14 @@ app.layout = html.Div( children = [
     dcc.Dropdown(
         id='champ_sel_dropdown',
         options=[
-            {'label': champ, 'value': champ} for champ in df.champion.unique()
+            {'label': champ, 'value': champ} for champ in df_champions.champion.unique()
         ],
-        value = 'all'
     ),
 
     dash_table.DataTable(
         id='main_table',
         columns=[{"name": i, "id": i} for i in df.columns],
-        data=df.to_dict('records'),
+        # data=df.to_dict('records'),
         sort_action='native',
         style_table={
             'maxHeight': '500px',
@@ -142,7 +144,69 @@ app.layout = html.Div( children = [
         # style_cell={'width': '100px'},
     ),
 
-    dcc.Graph(figure=fig),
+    html.Div( style = {'padding': 50} ),
+
+    html.Div( children = [
+
+        html.Label('X Axis Input',
+            style= {
+                'textAlign': 'center',
+            }
+        ),
+
+        dcc.Dropdown(
+            id='main_graph_x_axis',
+            options=[
+                {'label': column, 'value': column} for column in df.columns.values
+            ],
+            value='gameDuration'
+        ),
+
+        html.Label('Y Axis Input',
+            style= {
+                'textAlign': 'center',
+            }
+        ),
+
+        dcc.Dropdown(
+            id='main_graph_y_axis',
+            options=[
+                {'label': column, 'value': column} for column in df.columns.values
+            ],
+            value='totalDamageDealtToChampions'
+        ),
+
+        html.Label('Color Input',
+            style= {
+                'textAlign': 'center',
+            }
+        ),
+
+        dcc.Dropdown(
+            id='main_graph_color',
+            options=[
+                {'label': column, 'value': column} for column in df.columns.values
+            ],
+            value='win'
+        ),
+
+        html.Label('Size Input',
+            style= {
+                'textAlign': 'center',
+            }
+        ),
+
+        dcc.Dropdown(
+            id='main_graph_size',
+            options=[
+                {'label': column, 'value': column} for column in df.columns.values
+            ],
+            value='largestMultiKill'
+        ),
+
+    ], style={'columnCount': 2} ),
+
+    dcc.Graph(id = 'main_graph'),
 
     html.H2(
         children= 'Per Champion averages',
@@ -168,15 +232,15 @@ app.layout = html.Div( children = [
 
     dcc.Slider(
         id='min_num_games_slider',
-        min=0,
+        min=1,
         max=10,
         value=0,
-        marks={str(num): str(num) for num in range(11)},
+        marks={str(num): str(num) for num in range(1,11)},
         step=None
     ),
 
     dcc.Graph(id = 'per_champ_graph',
-        figure=fig2),
+    ),
     
 
 ])
@@ -190,6 +254,50 @@ def update_graph(min_num):
     df1 = df_per_champ.loc[ df_per_champ['numberOfGames'] > min_num ]
     fig = px.scatter(df1, x  = 'win', y = 'KDA', color = 'dmgShare', hover_data=['champion', 'dmgShare'], size= 'numberOfGames')
     return fig
+
+# ---------------------------------------------------
+
+@app.callback(
+    Output('main_table', 'data'),
+    [Input('champ_sel_dropdown', 'value')] )
+def update_table(champ_name):
+
+    df2 = df.copy()
+    if champ_name in lst_champ_names:
+        df2 = df2.loc[ df2['champion'] == champ_name ]
+    data_dict = df2.to_dict('records')
+
+    return data_dict
+
+# -----------------------------------------------------
+
+@app.callback(
+    Output('main_graph', 'figure'),
+    [Input('champ_sel_dropdown', 'value'),
+     Input('main_graph_x_axis', 'value'),
+     Input('main_graph_y_axis', 'value'),
+     Input('main_graph_color', 'value'),
+     Input('main_graph_size', 'value') ] )
+def update_graph2(champ_name, x_axis_name, y_axis_name, color_name, size_name):
+
+    df3 = df.copy()
+    if champ_name in lst_champ_names:
+        df3 = df.loc[ df['champion'] == champ_name ]
+    fig = px.scatter(df3, x  = x_axis_name, y = y_axis_name, color = color_name, hover_data=['champion', 'dmgShare'], size= size_name)
+
+    return fig
+
+ # -----------------------------------------------------
+
+# @app.callback(
+#     Output('main_graph', 'figure'),
+#     [Input('main_graph_x_axis', 'value')])
+# def update_axis(x_axis_value):
+
+#     df1 = df_per_champ.copy()
+#     df1 = df_per_champ.loc[ df_per_champ['numberOfGames'] > min_num ]
+#     fig = px.scatter(df1, x  = 'win', y = 'KDA', color = 'dmgShare', hover_data=['champion', 'dmgShare'], size= 'numberOfGames')
+#     return fig
 
 
 
