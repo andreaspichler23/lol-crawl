@@ -7,12 +7,19 @@ import numpy as np
 from dash.dependencies import Input, Output
 import plotly.express as px
 
+import import_func
+
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 20)
 
+df_beware = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_beware.csv')
+df_frank = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_frank.csv')
 
-
-df = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_beware.csv')
+summoner_name = 'Frank Drebin'
+if summoner_name == 'bewareoftraps':
+    df = df_beware.copy()
+if summoner_name == 'Frank Drebin':
+    df = df_frank.copy()
 
 df['KDA'] = np.where(df['deaths']>0, (df['kills'] + df['assists']) / df['deaths'], df['kills'] + df['assists'])
 df = df.round({'KDA': 1})
@@ -22,6 +29,12 @@ df['gameCreation_dt'] = df['gameCreation_dt'].dt.strftime('%d/%m/%Y %H:%M')
 
 df['dmgShare'] = df['dmgShare'] * 100
 df = df.round({'dmgShare': 1})
+
+gametime = df['gameDuration'].sum()
+day, hour, minutes, seconds = import_func.get_gametime(gametime)
+df['gameDuration'] = df['gameDuration'] / 60
+df = df.round({'gameDuration': 1})
+
 
 df['win'] = df['win'].astype(int)
 
@@ -38,13 +51,11 @@ df = df.merge(df_champions, how = 'inner', on = 'championId')
 
 # end merge ----------------------------------------------------------------------------------
 
-column_list = ['win', 'championId', 'champion', 'kills', 'deaths', 'assists', 'KDA', 'largestMultiKill', 'totalDamageDealtToChampions', 'totalHeal', 'damageDealtToTurrets', 'timeCCingOthers', 'totalDamageTaken', 'goldEarned', 'totalMinionsKilled', 'gameDuration', 'gameCreation',  'gameCreation_dt', 'dmgShare', 'duo']
+column_list = ['win', 'championId', 'champion', 'kills', 'deaths', 'assists', 'KDA', 'item0', 'largestMultiKill', 'totalDamageDealtToChampions', 'totalHeal', 'damageDealtToTurrets', 'totalDamageTaken', 'goldEarned', 'totalMinionsKilled', 'gameDuration', 'gameCreation',  'gameCreation_dt', 'dmgShare', 'duo']
 df = df[column_list]
 
 
 df['numberOfGames'] = 1 # dummie column, dropped later
-
-gametime = df['gameDuration'].sum()
 
 
 # creating the dataframe per champ -----------------------------------------------------------------------------------------
@@ -61,10 +72,12 @@ df_per_champ = df_dum.groupby('championId')[df_dum.columns.values].agg( dict_agg
 df_per_champ['win'] = df_per_champ['win'] * 100
 df_per_champ = df_per_champ.round({key: 1 for key in df_per_champ.columns})
 
+df_both_players = import_func.makeJoinPerChampTable(df_frank, df_beware, df_champions)
+
 
 # end building the per champ table ------------------------------------------------------------------------------------
 
-df = df.drop( columns = ['numberOfGames'] )
+# df = df.drop( columns = ['numberOfGames'] )
 
 # start creating the figures ------------------------------------------------------------------------------------------
 
@@ -73,34 +86,8 @@ df = df.drop( columns = ['numberOfGames'] )
 # fig2 = px.scatter(df_per_champ, x  = 'win', y = 'KDA', color = 'dmgShare', hover_data=['champion', 'dmgShare'], size= 'numberOfGames')
 
 
-
 #end figure creation -------------------------------------------------------------------------------------
 
-def get_gametime(game_time):
-    day = game_time // (24 * 3600)
-    game_time = game_time % (24 * 3600)
-    hour = game_time // 3600
-    game_time %= 3600
-    minutes = game_time // 60
-    game_time %= 60
-    seconds = game_time
-    # print(name, "played %d days %d hours %d minutes %d seconds of ARAM since beginning of 2018" % (day, hour, minutes, seconds))
-    return day, hour, minutes, seconds
-
-day, hour, minutes, seconds = get_gametime(gametime)
-
-
-def generate_table(dataframe, max_rows=10):
-    return html.Table([
-        html.Thead(
-            html.Tr([html.Th(col) for col in dataframe.columns])
-        ),
-        html.Tbody([
-            html.Tr([
-                html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
-            ]) for i in range(min(len(dataframe), max_rows))
-        ])
-    ])
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -109,7 +96,7 @@ app = dash.Dash(__name__) #, external_stylesheets=external_stylesheets
 app.layout = html.Div( children = [
 
     html.H1(
-        children='Hello bewareoftraps!',
+        children= 'Hello '+ summoner_name + '!',
         style={
             'textAlign': 'center',
             'color': '#7FDBFF'
@@ -117,7 +104,7 @@ app.layout = html.Div( children = [
     ),
 
     html.H2(
-        children= 'You wasted ' + str(day) + ' days ' + str(hour) + ' hours ' + str(minutes) + ' minutes ' + str(seconds) + ' seconds on ARAM since 2017',
+        children= 'You wasted ' + str(day) + ' days ' + str(hour) + ' hours ' + str(minutes) + ' minutes ' + str(seconds) + ' in the last 2 years',
         style={
             'textAlign': 'center',
             'color': '#7FDBFF'
@@ -131,15 +118,37 @@ app.layout = html.Div( children = [
         ],
     ),
 
+    dcc.Markdown(
+        id = 'text_summary',
+        style={'columnCount': 3}
+    ),
+
+
     dash_table.DataTable(
         id='main_table',
-        columns=[{"name": i, "id": i} for i in df.columns],
+        # columns= [{"name": i, "id": i} for i in df.columns if i != 'gameCreation_dt'] + [{"name": 'gameCreation_dt', "id": 'gameCreation_dt', 'type': 'datetime'}],
+        columns= [{"name": i, "id": i} for i in df.columns if i != 'item0'] + [ {"name": 'item0', "id": 'item0', 'type': 'text', 'presentation': 'markdown'} ],
         # data=df.to_dict('records'),
         sort_action='native',
         style_table={
             'maxHeight': '500px',
-            'overflowY': 'scroll'
+            'overflowY': 'scroll',
         },
+        style_cell={'height': 'auto'},
+        style_data_conditional=[
+            {
+                'if': {
+                    'filter_query': '{win} eq 0'
+                },
+                'backgroundColor': 'rgba(255,0,0,0.3)',
+            },
+            {
+                'if': {
+                    'filter_query': '{win} eq 1'
+                },
+                'backgroundColor': 'rgba(0,0,255,0.3)',
+            }
+        ]
         # fixed_rows={ 'headers': True, 'data': 0 },
         # style_cell={'width': '100px'},
     ),
@@ -216,19 +225,19 @@ app.layout = html.Div( children = [
         }
     ),
 
-    # dash_table.DataTable(
-    #     id='table_per_champ',
-    #     columns=[{"name": i, "id": i} for i in df_per_champ.columns],
-    #     data=df_per_champ.to_dict('records'),
-    #     sort_action='native',
-    #     filter_action='native',
-    #     style_table={
-    #         'maxHeight': '500px',
-    #         'overflowY': 'scroll'
-    #     },
-    #     # fixed_rows={ 'headers': True, 'data': 0 },
-    #     # style_cell={'width': '100px'},
-    # ),
+    dash_table.DataTable(
+        id='table_per_champ',
+        columns=[{"name": i, "id": i} for i in df_per_champ.columns],
+        data=df_per_champ.to_dict('records'),
+        sort_action='native',
+        # filter_action='native',
+        style_table={
+            'maxHeight': '500px',
+            'overflowY': 'scroll'
+        },
+        # fixed_rows={ 'headers': True, 'data': 0 },
+        # style_cell={'width': '100px'},
+    ),
 
     dcc.Slider(
         id='min_num_games_slider',
@@ -241,9 +250,56 @@ app.layout = html.Div( children = [
 
     dcc.Graph(id = 'per_champ_graph',
     ),
+
+    dcc.Graph(
+        id = 'per_champ_bar_graph',
+    ),
     
+    dcc.Graph(id = 'graph_player_comparison',
+    ),
 
 ])
+
+@app.callback(
+    Output('text_summary', 'children'),
+    [Input('champ_sel_dropdown', 'value')] )
+def update_summary(champ_name):
+
+    df5 = df.copy()
+    if champ_name in lst_champ_names:
+        df5 = df5.loc[ df5['champion'] == champ_name ]
+    winrate = np.around(100 * df5['win'].mean(),1)
+    n_games = df5['numberOfGames'].sum()
+    avg_kda = np.around(df5['KDA'].mean(),1)
+    dmg_share = np.around(df5['dmgShare'].mean(),1)
+    avg_kills = np.around(df5['kills'].mean(),1)
+    avg_deaths = np.around(df5['deaths'].mean(),1)
+    avg_assists = np.around(df5['assists'].mean(),1)
+    avg_cs = np.around(df5['totalMinionsKilled'].mean(),1)
+
+    if champ_name in lst_champ_names:
+        string_img = 'http://ddragon.leagueoflegends.com/cdn/10.7.1/img/champion/' + champ_name + '.png'
+    else:
+        string_img = 'http://ddragon.leagueoflegends.com/cdn/6.8.1/img/map/map12.png'
+
+    markdown_text = '''
+    ## Winrate = {} %
+    ## Number of Games = {}
+    ## Average Damage Share = {} %
+    ## Average KDA = {}
+    ## Average Kills = {}
+    ## Average Deaths = {}
+    ## Average Assists = {}
+    ## Average CS = {}
+    ![{}]({})
+
+    '''.format(winrate, n_games, dmg_share, avg_kda, avg_kills, avg_deaths, avg_assists, avg_cs, champ_name, string_img)
+    return markdown_text
+
+
+    
+# ----------------------------------------------------------------------------------------
+
 
 @app.callback(
     Output('per_champ_graph', 'figure'),
@@ -253,6 +309,19 @@ def update_graph(min_num):
     df1 = df_per_champ.copy()
     df1 = df_per_champ.loc[ df_per_champ['numberOfGames'] > min_num ]
     fig = px.scatter(df1, x  = 'win', y = 'KDA', color = 'dmgShare', hover_data=['champion', 'dmgShare'], size= 'numberOfGames')
+    return fig
+
+# ----------------------------------------------------------------------
+
+@app.callback(
+    Output('graph_player_comparison', 'figure'),
+    [Input('min_num_games_slider', 'value')])
+def update_graph3(min_num):
+
+    df4 = df_both_players.copy()
+    df4 = df4.loc[ (df4['numberOfGames1'] > min_num) & (df4['numberOfGames2'] > min_num) ]
+    fig = px.scatter(df4, x='champion1', y='diff', hover_data=['champion1'], color = 'win1')
+
     return fig
 
 # ---------------------------------------------------
@@ -265,6 +334,8 @@ def update_table(champ_name):
     df2 = df.copy()
     if champ_name in lst_champ_names:
         df2 = df2.loc[ df2['champion'] == champ_name ]
+
+    df2['item0'] = '![item0](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/1001.png)'
     data_dict = df2.to_dict('records')
 
     return data_dict
