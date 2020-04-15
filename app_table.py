@@ -51,7 +51,7 @@ df = df.merge(df_champions, how = 'inner', on = 'championId')
 
 # end merge ----------------------------------------------------------------------------------
 
-column_list = ['win', 'championId', 'champion', 'kills', 'deaths', 'assists', 'KDA', 'item0', 'largestMultiKill', 'totalDamageDealtToChampions', 'totalHeal', 'damageDealtToTurrets', 'totalDamageTaken', 'goldEarned', 'totalMinionsKilled', 'gameDuration', 'gameCreation',  'gameCreation_dt', 'dmgShare', 'duo']
+column_list = ['win', 'championId', 'champion', 'kills', 'deaths', 'assists', 'KDA', 'largestMultiKill', 'totalDamageDealtToChampions', 'totalHeal', 'damageDealtToTurrets', 'totalDamageTaken', 'goldEarned', 'totalMinionsKilled', 'gameDuration', 'gameCreation',  'gameCreation_dt', 'dmgShare', 'duo']
 df = df[column_list]
 
 
@@ -62,7 +62,7 @@ df['numberOfGames'] = 1 # dummie column, dropped later
 
 df_dum = df.copy()
 df_dum = df_dum.drop( columns = ['gameCreation', 'gameCreation_dt','duo'] )
-dict_agg = { key: 'median' for key in df_dum.columns}
+dict_agg = { key: 'mean' for key in df_dum.columns}
 dict_agg['champion'] = 'first'
 dict_agg['numberOfGames'] = 'sum'
 dict_agg['win'] = 'mean'
@@ -87,6 +87,10 @@ df_both_players = import_func.makeJoinPerChampTable(df_frank, df_beware, df_cham
 
 
 #end figure creation -------------------------------------------------------------------------------------
+
+# create the final table used for displaying and drawing -------------------------------------------------
+
+df = import_func.make_display_table(df)
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -127,24 +131,31 @@ app.layout = html.Div( children = [
     dash_table.DataTable(
         id='main_table',
         # columns= [{"name": i, "id": i} for i in df.columns if i != 'gameCreation_dt'] + [{"name": 'gameCreation_dt', "id": 'gameCreation_dt', 'type': 'datetime'}],
-        columns= [{"name": i, "id": i} for i in df.columns if i != 'item0'] + [ {"name": 'item0', "id": 'item0', 'type': 'text', 'presentation': 'markdown'} ],
-        # data=df.to_dict('records'),
-        sort_action='native',
+        # columns= [{"name": i, "id": i} for i in df.columns if i != 'item0'] + [ {"name": 'item0', "id": 'item0', 'type': 'text', 'presentation': 'markdown'} ],
+        columns= [{"name": i, "id": i} for i in df.columns],
+        # css=[
+        #     dict(selector='td table', rule='height: 64px;'),
+        # ],
+        # sort_action='native',
+        sort_action='custom',
+        sort_mode='single',
+        sort_by=[],
+
         style_table={
             'maxHeight': '500px',
             'overflowY': 'scroll',
         },
-        style_cell={'height': 'auto'},
+        # style_cell={'height': '64px'},
         style_data_conditional=[
             {
                 'if': {
-                    'filter_query': '{win} eq 0'
+                    'filter_query': '{Win} eq 0'
                 },
                 'backgroundColor': 'rgba(255,0,0,0.3)',
             },
             {
                 'if': {
-                    'filter_query': '{win} eq 1'
+                    'filter_query': '{Win} eq 1'
                 },
                 'backgroundColor': 'rgba(0,0,255,0.3)',
             }
@@ -182,7 +193,7 @@ app.layout = html.Div( children = [
             options=[
                 {'label': column, 'value': column} for column in df.columns.values
             ],
-            value='totalDamageDealtToChampions'
+            value='Damage To Champions'
         ),
 
         html.Label('Color Input',
@@ -196,7 +207,7 @@ app.layout = html.Div( children = [
             options=[
                 {'label': column, 'value': column} for column in df.columns.values
             ],
-            value='win'
+            value='Win'
         ),
 
         html.Label('Size Input',
@@ -210,7 +221,7 @@ app.layout = html.Div( children = [
             options=[
                 {'label': column, 'value': column} for column in df.columns.values
             ],
-            value='largestMultiKill'
+            value='Largest Multi Kill'
         ),
 
     ], style={'columnCount': 2} ),
@@ -266,16 +277,23 @@ app.layout = html.Div( children = [
 def update_summary(champ_name):
 
     df5 = df.copy()
+    df_per_champ2 = df_per_champ.copy()
+
     if champ_name in lst_champ_names:
-        df5 = df5.loc[ df5['champion'] == champ_name ]
-    winrate = np.around(100 * df5['win'].mean(),1)
-    n_games = df5['numberOfGames'].sum()
+        df5 = df5.loc[ df5['Champion'] == champ_name ]
+        df_per_champ2 = df_per_champ2.loc[ df_per_champ2['champion'] == champ_name ]
+        n_games = df_per_champ2['numberOfGames'].values
+        n_games = n_games[0]
+    else:
+        n_games = df_per_champ2['numberOfGames'].sum()
+
+    winrate = np.around(100 * df5['Win'].mean(),1)
     avg_kda = np.around(df5['KDA'].mean(),1)
-    dmg_share = np.around(df5['dmgShare'].mean(),1)
-    avg_kills = np.around(df5['kills'].mean(),1)
-    avg_deaths = np.around(df5['deaths'].mean(),1)
-    avg_assists = np.around(df5['assists'].mean(),1)
-    avg_cs = np.around(df5['totalMinionsKilled'].mean(),1)
+    dmg_share = np.around(df5['Damage Share'].mean(),1)
+    avg_kills = np.around(df5['K'].mean(),1)
+    avg_deaths = np.around(df5['D'].mean(),1)
+    avg_assists = np.around(df5['A'].mean(),1)
+    avg_cs = np.around(df5['CS'].mean(),1)
 
     if champ_name in lst_champ_names:
         string_img = 'http://ddragon.leagueoflegends.com/cdn/10.7.1/img/champion/' + champ_name + '.png'
@@ -294,6 +312,7 @@ def update_summary(champ_name):
     ![{}]({})
 
     '''.format(winrate, n_games, dmg_share, avg_kda, avg_kills, avg_deaths, avg_assists, avg_cs, champ_name, string_img)
+
     return markdown_text
 
 
@@ -328,14 +347,27 @@ def update_graph3(min_num):
 
 @app.callback(
     Output('main_table', 'data'),
-    [Input('champ_sel_dropdown', 'value')] )
-def update_table(champ_name):
+    [Input('champ_sel_dropdown', 'value'),
+    Input('main_table', 'sort_by')] )
+def update_table(champ_name, sort_by):
 
     df2 = df.copy()
     if champ_name in lst_champ_names:
-        df2 = df2.loc[ df2['champion'] == champ_name ]
+        df2 = df2.loc[ df2['Champion'] == champ_name ]
+    
+    if len(sort_by):
+        df2 = df2.sort_values(
+            by = sort_by[0]['column_id'],
+            ascending=sort_by[0]['direction'] == 'asc',
+            # ascending=sort_by[0]['direction'] == 'asc'
+            # inplace=False
+        )
+    else:
+        # No sort is applied
+        df2 = df2
 
-    df2['item0'] = '![item0](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/1001.png)'
+    # df2['item0'] = '![item0](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/1001.png)'
+    # df2['item0'] = <img src="http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/1001.png" alt="drawing" width="200"/>
     data_dict = df2.to_dict('records')
 
     return data_dict
@@ -353,8 +385,8 @@ def update_graph2(champ_name, x_axis_name, y_axis_name, color_name, size_name):
 
     df3 = df.copy()
     if champ_name in lst_champ_names:
-        df3 = df.loc[ df['champion'] == champ_name ]
-    fig = px.scatter(df3, x  = x_axis_name, y = y_axis_name, color = color_name, hover_data=['champion', 'dmgShare'], size= size_name)
+        df3 = df3.loc[ df3['Champion'] == champ_name ]
+    fig = px.scatter(df3, x  = x_axis_name, y = y_axis_name, color = color_name, hover_data=['Champion', 'Damage Share'], size= size_name)
 
     return fig
 
