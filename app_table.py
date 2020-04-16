@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from dash.dependencies import Input, Output
 import plotly.express as px
+#some change
 
 import import_func
 
@@ -93,17 +94,20 @@ df_both_players = import_func.makeJoinPerChampTable(df_frank, df_beware, df_cham
 df = import_func.make_display_table(df)
 
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = ['C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/style.css']
 
-app = dash.Dash(__name__) #, external_stylesheets=external_stylesheets
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets) #, external_stylesheets=external_stylesheets
 
 app.layout = html.Div( children = [
 
     html.H1(
         children= 'Hello '+ summoner_name + '!',
+        className='test',
         style={
             'textAlign': 'center',
-            'color': '#7FDBFF'
+            'color': 'red' ##7FDBFF
         }
     ),
 
