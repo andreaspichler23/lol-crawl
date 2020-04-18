@@ -25,8 +25,7 @@ if summoner_name == 'Frank Drebin':
 df['KDA'] = np.where(df['deaths']>0, (df['kills'] + df['assists']) / df['deaths'], df['kills'] + df['assists'])
 df = df.round({'KDA': 1})
 
-df['gameCreation_dt'] = pd.to_datetime(df['gameCreation'], unit='ms')  
-df['gameCreation_dt'] = df['gameCreation_dt'].dt.strftime('%d/%m/%Y %H:%M')
+df['gameCreation_dt'] = pd.to_datetime(df['gameCreation'], unit='ms') 
 
 df['dmgShare'] = df['dmgShare'] * 100
 df = df.round({'dmgShare': 1})
@@ -91,7 +90,9 @@ df_both_players = import_func.makeJoinPerChampTable(df_frank, df_beware, df_cham
 
 # create the final table used for displaying and drawing -------------------------------------------------
 
+
 df = import_func.make_display_table(df)
+
 
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -356,9 +357,13 @@ def update_graph3(min_num):
 def update_table(champ_name, sort_by):
 
     df2 = df.copy()
+
     if champ_name in lst_champ_names:
         df2 = df2.loc[ df2['Champion'] == champ_name ]
     
+    # print( sort_by )
+    # print( df2['gameCreation_dt'].dtypes )
+
     if len(sort_by):
         df2 = df2.sort_values(
             by = sort_by[0]['column_id'],
@@ -370,6 +375,7 @@ def update_table(champ_name, sort_by):
         # No sort is applied
         df2 = df2
 
+    df2['gameCreation_dt'] = df2['gameCreation_dt'].dt.strftime('%d/%m/%Y %H:%M')
     # df2['item0'] = '![item0](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/1001.png)'
     # df2['item0'] = <img src="http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/1001.png" alt="drawing" width="200"/>
     data_dict = df2.to_dict('records')

@@ -41,7 +41,7 @@ def makeJoinPerChampTable(df_frank, df_beware, df_champions):
 def make_display_table(dataframe):
 
     df = dataframe.copy()
-    df = df.drop( columns = ['championId', 'numberOfGames'] )
+    df = df.drop( columns = ['championId', 'numberOfGames', 'gameCreation'] )
     df = df.rename( columns = {'kills': 'K', 'deaths': 'D', 'assists': 'A', 'totalDamageDealtToChampions': 'Damage To Champions', 'totalHeal': 'Heal'} )
     df = df.rename( columns = {'damageDealtToTurrets': 'Damage To Turrets', 'totalDamageTaken': 'Damage Taken', 'goldEarned': 'Gold'} )
     df = df.rename( columns = {'totalMinionsKilled': 'CS', 'dmgShare': 'Damage Share'} )
