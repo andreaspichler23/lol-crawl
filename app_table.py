@@ -16,7 +16,7 @@ pd.set_option('display.max_columns', 20)
 df_beware = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_beware.csv')
 df_frank = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_frank.csv')
 
-summoner_name = 'Frank Drebin'
+summoner_name = 'bewareoftraps'
 if summoner_name == 'bewareoftraps':
     df = df_beware.copy()
 if summoner_name == 'Frank Drebin':
@@ -49,9 +49,10 @@ lst_champ_names = df_champions.champion.values
 df = df.merge(df_champions, how = 'inner', on = 'championId')
 
 
-# end merge ----------------------------------------------------------------------------------
 
-column_list = ['win', 'championId', 'champion', 'kills', 'deaths', 'assists', 'KDA', 'largestMultiKill', 'totalDamageDealtToChampions', 'totalHeal', 'damageDealtToTurrets', 'totalDamageTaken', 'goldEarned', 'totalMinionsKilled', 'gameDuration', 'gameCreation',  'gameCreation_dt', 'dmgShare', 'duo']
+# ------------------------------------------------------------
+
+column_list = ['win', 'championId', 'champion', 'kills', 'deaths', 'assists', 'item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'KDA', 'largestMultiKill', 'totalDamageDealtToChampions', 'totalHeal', 'damageDealtToTurrets', 'totalDamageTaken', 'goldEarned', 'totalMinionsKilled', 'gameDuration', 'gameCreation',  'gameCreation_dt', 'dmgShare', 'duo']
 df = df[column_list]
 
 
@@ -92,11 +93,15 @@ df_both_players = import_func.makeJoinPerChampTable(df_frank, df_beware, df_cham
 
 
 df = import_func.make_display_table(df)
+df_per_champ = import_func.make_per_champ_display_table(df_per_champ)
+
+tooltip_data = import_func.generate_tooltip_data(df)
 
 
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 external_stylesheets = ['C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/style.css']
+
 
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets) #, external_stylesheets=external_stylesheets
@@ -127,6 +132,11 @@ app.layout = html.Div( children = [
         ],
     ),
 
+    html.Img(
+        id = 'img_champ_summary',
+        className = 'img-class'
+    ),
+
     dcc.Markdown(
         id = 'text_summary',
         style={'columnCount': 3}
@@ -135,17 +145,14 @@ app.layout = html.Div( children = [
 
     dash_table.DataTable(
         id='main_table',
-        # columns= [{"name": i, "id": i} for i in df.columns if i != 'gameCreation_dt'] + [{"name": 'gameCreation_dt', "id": 'gameCreation_dt', 'type': 'datetime'}],
-        # columns= [{"name": i, "id": i} for i in df.columns if i != 'item0'] + [ {"name": 'item0', "id": 'item0', 'type': 'text', 'presentation': 'markdown'} ],
-        columns= [{"name": i, "id": i} for i in df.columns],
+        # columns= [ {"name": 'item0', "id": 'item0', 'type': 'text', 'presentation': 'markdown'} ] + [{"name": i, "id": i} for i in df.columns if i != 'item0'],
         # css=[
         #     dict(selector='td table', rule='height: 64px;'),
         # ],
-        # sort_action='native',
+
         sort_action='custom',
         sort_mode='single',
         sort_by=[],
-
         style_table={
             'maxHeight': '500px',
             'overflowY': 'scroll',
@@ -241,10 +248,19 @@ app.layout = html.Div( children = [
         }
     ),
 
+    dcc.Slider(
+        id='min_num_games_slider',
+        min=1,
+        max=df_per_champ['Number of Games'].max(),
+        value=0,
+        marks={str(num): str(num) for num in range(1,df_per_champ['Number of Games'].max() )},
+        step=None
+    ),
+
     dash_table.DataTable(
         id='table_per_champ',
         columns=[{"name": i, "id": i} for i in df_per_champ.columns],
-        data=df_per_champ.to_dict('records'),
+        # data=df_per_champ.to_dict('records'),
         sort_action='native',
         # filter_action='native',
         style_table={
@@ -255,21 +271,13 @@ app.layout = html.Div( children = [
         # style_cell={'width': '100px'},
     ),
 
-    dcc.Slider(
-        id='min_num_games_slider',
-        min=1,
-        max=10,
-        value=0,
-        marks={str(num): str(num) for num in range(1,11)},
-        step=None
-    ),
 
     dcc.Graph(id = 'per_champ_graph',
     ),
 
-    dcc.Graph(
-        id = 'per_champ_bar_graph',
-    ),
+    # dcc.Graph(
+    #     id = 'per_champ_bar_graph',
+    # ),
     
     dcc.Graph(id = 'graph_player_comparison',
     ),
@@ -287,10 +295,10 @@ def update_summary(champ_name):
     if champ_name in lst_champ_names:
         df5 = df5.loc[ df5['Champion'] == champ_name ]
         df_per_champ2 = df_per_champ2.loc[ df_per_champ2['champion'] == champ_name ]
-        n_games = df_per_champ2['numberOfGames'].values
+        n_games = df_per_champ2['Number of Games'].values
         n_games = n_games[0]
     else:
-        n_games = df_per_champ2['numberOfGames'].sum()
+        n_games = df_per_champ2['Number of Games'].sum()
 
     winrate = np.around(100 * df5['Win'].mean(),1)
     avg_kda = np.around(df5['KDA'].mean(),1)
@@ -300,10 +308,6 @@ def update_summary(champ_name):
     avg_assists = np.around(df5['A'].mean(),1)
     avg_cs = np.around(df5['CS'].mean(),1)
 
-    if champ_name in lst_champ_names:
-        string_img = 'http://ddragon.leagueoflegends.com/cdn/10.7.1/img/champion/' + champ_name + '.png'
-    else:
-        string_img = 'http://ddragon.leagueoflegends.com/cdn/6.8.1/img/map/map12.png'
 
     markdown_text = '''
     ## Winrate = {} %
@@ -314,9 +318,8 @@ def update_summary(champ_name):
     ## Average Deaths = {}
     ## Average Assists = {}
     ## Average CS = {}
-    ![{}]({})
 
-    '''.format(winrate, n_games, dmg_share, avg_kda, avg_kills, avg_deaths, avg_assists, avg_cs, champ_name, string_img)
+    '''.format(winrate, n_games, dmg_share, avg_kda, avg_kills, avg_deaths, avg_assists, avg_cs) #, champ_name, string_img
 
     return markdown_text
 
@@ -324,6 +327,19 @@ def update_summary(champ_name):
     
 # ----------------------------------------------------------------------------------------
 
+@app.callback(
+    Output('img_champ_summary', 'src'),
+    [Input('champ_sel_dropdown', 'value')] )
+def update_img(champ_name):
+
+    if champ_name in lst_champ_names:
+        string_img = 'http://ddragon.leagueoflegends.com/cdn/10.7.1/img/champion/' + champ_name + '.png'
+    else:
+        string_img = 'http://ddragon.leagueoflegends.com/cdn/6.8.1/img/map/map12.png'
+
+    return string_img
+
+# -----------------------------------------------------------------------------------------
 
 @app.callback(
     Output('per_champ_graph', 'figure'),
@@ -331,9 +347,24 @@ def update_summary(champ_name):
 def update_graph(min_num):
 
     df1 = df_per_champ.copy()
-    df1 = df_per_champ.loc[ df_per_champ['numberOfGames'] > min_num ]
-    fig = px.scatter(df1, x  = 'win', y = 'KDA', color = 'dmgShare', hover_data=['champion', 'dmgShare'], size= 'numberOfGames')
+    df1 = df_per_champ.loc[ df_per_champ['Number of Games'] > min_num ]
+    fig = px.scatter(df1, x  = 'Win Percentage', y = 'KDA', color = 'Damage Share', hover_data=['Champion', 'Damage Share'], size= 'Number of Games')
     return fig
+
+
+# ----------------------------------------------------------------------------------------------
+
+@app.callback(
+    Output('table_per_champ', 'data'),
+    [Input('min_num_games_slider', 'value')])
+def update_graph(min_num):
+
+    df7 = df_per_champ.copy()
+    df7 = df_per_champ.loc[ df_per_champ['Number of Games'] > min_num ]
+
+    data_dict = df7.to_dict('rows')
+
+    return data_dict
 
 # ----------------------------------------------------------------------
 
@@ -351,7 +382,9 @@ def update_graph3(min_num):
 # ---------------------------------------------------
 
 @app.callback(
-    Output('main_table', 'data'),
+    [Output('main_table', 'data'),
+    Output('main_table', 'tooltip_data'),
+    Output('main_table', 'columns')],
     [Input('champ_sel_dropdown', 'value'),
     Input('main_table', 'sort_by')] )
 def update_table(champ_name, sort_by):
@@ -360,27 +393,24 @@ def update_table(champ_name, sort_by):
 
     if champ_name in lst_champ_names:
         df2 = df2.loc[ df2['Champion'] == champ_name ]
-    
-    # print( sort_by )
-    # print( df2['gameCreation_dt'].dtypes )
 
     if len(sort_by):
         df2 = df2.sort_values(
             by = sort_by[0]['column_id'],
             ascending=sort_by[0]['direction'] == 'asc',
-            # ascending=sort_by[0]['direction'] == 'asc'
-            # inplace=False
         )
     else:
         # No sort is applied
         df2 = df2
 
     df2['gameCreation_dt'] = df2['gameCreation_dt'].dt.strftime('%d/%m/%Y %H:%M')
-    # df2['item0'] = '![item0](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/1001.png)'
-    # df2['item0'] = <img src="http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/1001.png" alt="drawing" width="200"/>
+    tooltip_data = import_func.generate_tooltip_data(df2)
+    df2 = df2.drop( columns = ['item0', 'item1', 'item2', 'item3', 'item4', 'item5'] )
+    columns= [{"name": i, "id": i} for i in df2.columns]
+
     data_dict = df2.to_dict('records')
 
-    return data_dict
+    return data_dict, tooltip_data, columns
 
 # -----------------------------------------------------
 
