@@ -16,7 +16,7 @@ pd.set_option('display.max_columns', 20)
 df_beware = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_beware.csv')
 df_frank = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_frank.csv')
 
-summoner_name = 'bewareoftraps'
+summoner_name = 'Frank Drebin'
 if summoner_name == 'bewareoftraps':
     df = df_beware.copy()
 if summoner_name == 'Frank Drebin':

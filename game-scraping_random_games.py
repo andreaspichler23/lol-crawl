@@ -17,7 +17,7 @@ import requests
 # summoner_id = 'oS992syEwEl4RHwId4maA_Voz_uhvpk3BszwUiASzjEeXQ0' #frank
 # summoner_name_global = 'Frank Drebin'
 
-api_key = 'RGAPI-eeb8f1d2-e851-4f23-84fa-5a7d5c021942'
+api_key = 'RGAPI-1511c5f9-3875-4d70-a7d6-374e6c31cba4'
 
 account_id = 'REwF0pRNRdEV0MCSVwEYBSwGy1s6jeEw3l7U39wg1oVQug' #beware
 summoner_id = 'zI2FIMMuLs4IEYsaOm6zsLDmW2797EBBPw5jVN_UAswPUwI' #beware
