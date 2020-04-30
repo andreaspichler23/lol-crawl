@@ -52,6 +52,8 @@ def make_display_table(dataframe):
 
     return df
 
+
+
 def make_per_champ_display_table(dataframe):
 
     df = dataframe.copy()
@@ -60,6 +62,25 @@ def make_per_champ_display_table(dataframe):
     df = df.rename( columns = {'damageDealtToTurrets': 'Damage To Turrets', 'totalDamageTaken': 'Damage Taken', 'goldEarned': 'Gold'} )
     df = df.rename( columns = {'totalMinionsKilled': 'CS', 'dmgShare': 'Damage Share', 'numberOfGames': 'Number of Games'} )
     df = df.rename( columns = {'champion': 'Champion', 'win': 'Win Percentage', 'largestMultiKill': 'Largest Multi Kill'} )
+
+    df['weight'] = df['Number of Games'] / df['Number of Games'].sum()
+
+    df_dum = df.copy()
+    df_dum['Champion'] = -1
+    for i in range( df_dum.shape[0] ):
+        
+        if i == 0:
+            dum_sum = df_dum.iloc[i].multiply(df_dum.iloc[i,-1])
+            continue
+
+        dum_sum = dum_sum + df_dum.iloc[i].multiply(df_dum.iloc[i,-1])
+
+    dum_sum['Champion'] = 'all'
+    df = df.append( dum_sum, ignore_index = True )
+    df['Number of Games'] = df['Number of Games'].astype( int )
+    df = df.drop( columns = ['weight'] )
+
+    df = df[['Champion', 'Number of Games', 'Win Percentage','K','D', 'A', 'KDA' ,'Largest Multi Kill','Damage To Champions', 'Heal', 'Damage To Turrets', 'Damage Taken', 'Gold', 'CS', 'gameDuration', 'Damage Share']]
 
     return df
 
@@ -79,12 +100,12 @@ def generate_markdown_for_tooltip(row):
 
     #no leading whitespace!
 
-    markdown_text = '''![item0](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
-    ![item1](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
-    ![item2](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
-    ![item3](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
-    ![item4](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
-    ![item5](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)'''.format(row['item0'], row['item1'],row['item2'],row['item3'],row['item4'],row['item5'],)
+    markdown_text = '''![](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
+    ![](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
+    ![](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
+    ![](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
+    ![](http://ddragon.leagueoflegends.com/cdn/10.7.1/img/item/{}.png)
+    ![](http://ddragon.leagueoflegends.com/cdn/10.7.1/img[{}.png)'''.format(row['item0'], row['item1'],row['item2'],row['item3'],row['item4'],row['item5'],)
 
 
     return markdown_text

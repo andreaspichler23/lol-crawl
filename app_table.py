@@ -13,10 +13,12 @@ import import_func
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 20)
 
+df_total_per_champ = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions_mean.csv')
+
 df_beware = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_beware.csv')
 df_frank = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_frank.csv')
 
-summoner_name = 'Frank Drebin'
+summoner_name = 'bewareoftraps'
 if summoner_name == 'bewareoftraps':
     df = df_beware.copy()
 if summoner_name == 'Frank Drebin':
@@ -93,7 +95,11 @@ df_both_players = import_func.makeJoinPerChampTable(df_frank, df_beware, df_cham
 
 
 df = import_func.make_display_table(df)
+
 df_per_champ = import_func.make_per_champ_display_table(df_per_champ)
+
+df_total_per_champ = df_total_per_champ.drop( columns = ['Unnamed: 0'] )
+df_total_per_champ = import_func.make_per_champ_display_table(df_total_per_champ)
 
 tooltip_data = import_func.generate_tooltip_data(df)
 
@@ -134,8 +140,10 @@ app.layout = html.Div( children = [
 
     html.Img(
         id = 'img_champ_summary',
-        className = 'img-class'
+        # className = 'img-class'
     ),
+
+    dcc.Graph(id = 'spider_web_graph'),
 
     dcc.Markdown(
         id = 'text_summary',
@@ -275,6 +283,9 @@ app.layout = html.Div( children = [
     dcc.Graph(id = 'per_champ_graph',
     ),
 
+    dcc.Graph(id = 'per_champ_graph_total',
+    ),
+
     # dcc.Graph(
     #     id = 'per_champ_bar_graph',
     # ),
@@ -294,7 +305,7 @@ def update_summary(champ_name):
 
     if champ_name in lst_champ_names:
         df5 = df5.loc[ df5['Champion'] == champ_name ]
-        df_per_champ2 = df_per_champ2.loc[ df_per_champ2['champion'] == champ_name ]
+        df_per_champ2 = df_per_champ2.loc[ df_per_champ2['Champion'] == champ_name ]
         n_games = df_per_champ2['Number of Games'].values
         n_games = n_games[0]
     else:
@@ -352,12 +363,25 @@ def update_graph(min_num):
     return fig
 
 
+# -----------------------------------------------------------------------------------------
+
+@app.callback(
+    Output('per_champ_graph_total', 'figure'),
+    [Input('min_num_games_slider', 'value')])
+def update_graph(min_num):
+
+    df_1 = df_total_per_champ.copy()
+    # df1 = df_per_champ.loc[ df_per_champ['Number of Games'] > min_num ]
+    fig = px.scatter(df_1, x  = 'Win Percentage', y = 'KDA', color = 'Damage Share', hover_data=['Champion', 'Damage Share'], size= 'Number of Games')
+    return fig
+
+
 # ----------------------------------------------------------------------------------------------
 
 @app.callback(
     Output('table_per_champ', 'data'),
     [Input('min_num_games_slider', 'value')])
-def update_graph(min_num):
+def update_per_champ_table(min_num):
 
     df7 = df_per_champ.copy()
     df7 = df_per_champ.loc[ df_per_champ['Number of Games'] > min_num ]
@@ -431,6 +455,40 @@ def update_graph2(champ_name, x_axis_name, y_axis_name, color_name, size_name):
     return fig
 
  # -----------------------------------------------------
+
+@app.callback(
+    Output('spider_web_graph', 'figure'),
+    [Input('champ_sel_dropdown', 'value')] )
+def update_spider_graph(champ_name):
+
+    df_total_per_champ_1 = df_total_per_champ.copy()
+    df_per_champ_1 = df_per_champ.copy()
+
+    if champ_name in lst_champ_names:
+        df_total_per_champ_1 = df_total_per_champ_1.loc[ df_total_per_champ_1['Champion'] == champ_name ]
+        df_per_champ_1 = df_per_champ_1.loc[ df_per_champ_1['Champion'] == champ_name ]
+    else:
+        df_total_per_champ_1 = df_total_per_champ_1.loc[ df_total_per_champ_1['Champion'] == 'all' ]
+        df_per_champ_1 = df_per_champ_1.loc[ df_per_champ_1['Champion'] == 'all' ]
+
+
+    df_total_per_champ_1 = df_total_per_champ_1.drop( columns = ['Champion', 'Number of Games'] )
+    df_per_champ_1 = df_per_champ_1.drop( columns = ['Champion', 'Number of Games'] )
+
+    lst_div = [ a/b for (a,b) in zip(df_per_champ_1.iloc[0], df_total_per_champ_1.iloc[0]) ]
+    lst_final = [ {'r': value1, 'theta': value2} for (value1, value2) in zip(lst_div, df_per_champ_1.columns) ]
+    df_final = pd.DataFrame.from_dict(lst_final)
+
+
+    fig = px.line_polar(df_final, r='r', theta='theta', line_close=True)
+    fig.update_layout(
+        polar = dict(
+            radialaxis_range = [0.5, 1.3]
+        )
+    )
+    # fig.update_traces(fill='toself')
+    return fig
+
 
 # @app.callback(
 #     Output('main_graph', 'figure'),
