@@ -3,6 +3,9 @@ import numpy as np
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 30)
 
+
+
+
 def makeJoinPerChampTable(df_frank, df_beware, df_champions):
 
     df_dum = df_frank.copy()
@@ -125,6 +128,79 @@ def generate_tooltip_data(df):
     # but each row is a dictionary of the form column_name (c): {dict describing the value of the tooltip of the corresponding cell}
 
     return tooltip_data
+
+
+def define_variables(df_frank, df_beware, summoner_name_input):
+
+
+    if summoner_name_input == 'bewareoftraps':
+        df = df_beware.copy()
+    if summoner_name_input == 'Frank Drebin':
+        df = df_frank.copy()
+
+    df['KDA'] = np.where(df['deaths']>0, (df['kills'] + df['assists']) / df['deaths'], df['kills'] + df['assists'])
+    df = df.round({'KDA': 1})
+
+    df['gameCreation_dt'] = pd.to_datetime(df['gameCreation'], unit='ms') 
+
+    df['dmgShare'] = df['dmgShare'] * 100
+    df = df.round({'dmgShare': 1})
+
+    gametime = df['gameDuration'].sum()
+    day, hour, minutes, seconds = get_gametime(gametime)
+    df['gameDuration'] = df['gameDuration'] / 60
+    df = df.round({'gameDuration': 1})
+
+
+    df['win'] = df['win'].astype(int)
+
+
+
+    # merge with champion dataframe ---------------------------------------------------------------
+
+    df_champions = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions.csv')
+    df_champions = df_champions.sort_values(by='champion')
+
+    lst_champ_names = df_champions.champion.values
+    df = df.merge(df_champions, how = 'inner', on = 'championId')
+
+    # ------------------------------------------------------------
+
+    column_list = ['win', 'championId', 'champion', 'kills', 'deaths', 'assists', 'item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'KDA', 'largestMultiKill', 'totalDamageDealtToChampions', 'totalHeal', 'damageDealtToTurrets', 'totalDamageTaken', 'goldEarned', 'totalMinionsKilled', 'gameDuration', 'gameCreation',  'gameCreation_dt', 'dmgShare', 'duo']
+    df = df[column_list]
+
+    df['numberOfGames'] = 1 # dummie column, dropped later
+
+
+    # creating the dataframe per champ -----------------------------------------------------------------------------------------
+
+    df_dum = df.copy()
+    df_dum = df_dum.drop( columns = ['gameCreation', 'gameCreation_dt','duo'] )
+    dict_agg = { key: 'mean' for key in df_dum.columns}
+    dict_agg['champion'] = 'first'
+    dict_agg['numberOfGames'] = 'sum'
+    dict_agg['win'] = 'mean'
+
+
+    df_per_champ = df_dum.groupby('championId')[df_dum.columns.values].agg( dict_agg ).reset_index(drop=True)
+    df_per_champ['win'] = df_per_champ['win'] * 100
+    df_per_champ = df_per_champ.round({key: 1 for key in df_per_champ.columns})
+
+    df_both_players = makeJoinPerChampTable(df_frank, df_beware, df_champions)
+
+    # create the final table used for displaying and drawing -------------------------------------------------
+
+
+    df = make_display_table(df)
+
+    df_per_champ = make_per_champ_display_table(df_per_champ)
+
+    df_total_per_champ = df_total_per_champ.drop( columns = ['Unnamed: 0'] )
+    df_total_per_champ = make_per_champ_display_table(df_total_per_champ)
+
+    tooltip_data = generate_tooltip_data(df)
+
+    return df, gametime, lst_champ_names, df_both_players, df_per_champ, df_total_per_champ, tooltip_data
 
 # def generate_table(dataframe, max_rows=10):
 #     return html.Table([

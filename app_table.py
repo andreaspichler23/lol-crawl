@@ -4,11 +4,12 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 import numpy as np
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.express as px
 #some change
 
 import import_func
+import game_scraping
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 20)
@@ -18,7 +19,7 @@ df_total_per_champ = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren
 df_beware = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_beware.csv')
 df_frank = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_frank.csv')
 
-summoner_name = 'bewareoftraps'
+summoner_name = 'Frank Drebin'
 if summoner_name == 'bewareoftraps':
     df = df_beware.copy()
 if summoner_name == 'Frank Drebin':
@@ -113,6 +114,16 @@ external_stylesheets = ['C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/L
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets) #, external_stylesheets=external_stylesheets
 
 app.layout = html.Div( children = [
+
+    dcc.Input(
+        id = 'summoner_name_input',
+        type = 'text'
+        # value = 'Summoner Name'
+
+    ),
+
+    html.Button(id='submit-button-state', n_clicks=0, children='Submit'),
+    html.Div(id='output-state'),
 
     html.H1(
         children= 'Hello '+ summoner_name + '!',
@@ -479,19 +490,43 @@ def update_spider_graph(champ_name):
     lst_final = [ {'r': value1, 'theta': value2} for (value1, value2) in zip(lst_div, df_per_champ_1.columns) ]
     df_final = pd.DataFrame.from_dict(lst_final)
 
+    axis_min = np.min( np.array( (0.5, np.min(lst_div)) ) )
+    axis_max = np.max( np.array( (1.3, np.max(lst_div)) ) )
 
     fig = px.line_polar(df_final, r='r', theta='theta', line_close=True)
     fig.update_layout(
         polar = dict(
-            radialaxis_range = [0.5, 1.3]
+            radialaxis_range = [axis_min, axis_max]
         )
     )
     # fig.update_traces(fill='toself')
     return fig
 
+# -------------------------------------------------------------------------
+
+@app.callback( Output('output-state', 'children'),
+              [Input('submit-button-state', 'n_clicks')],
+              [State('summoner_name_input', 'value')]  )
+def update_output(n_clicks, summoner_name_input):
+
+    df_frank = pd.DataFrame()
+    df_beware = pd.DataFrame()
+
+    if summoner_name_input is not None:
+        df_frank, df_beware = game_scraping.main(summoner_name_input)
+
+    df, gametime, lst_champ_names, df_both_players, df_per_champ, df_total_per_champ, tooltip_data = import_func.define_variables(df_frank, df_beware, summoner_name_input)
+
+    return u'''
+        The external dataframe has shape "{}",
+        Input 1 is "{}"
+    '''.format(df_frank.shape, summoner_name_input)
+
+
+
 
 # @app.callback(
-#     Output('main_graph', 'figure'),
+#     Output('main_graph', 'figure'),µ
 #     [Input('main_graph_x_axis', 'value')])
 # def update_axis(x_axis_value):
 
