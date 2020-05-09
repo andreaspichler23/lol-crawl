@@ -14,101 +14,111 @@ import game_scraping
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 20)
 
-df_total_per_champ = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions_mean.csv')
+# df_total_per_champ = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions_mean.csv')
 
-df_beware = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_beware.csv')
-df_frank = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_frank.csv')
+# df_beware = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_beware.csv')
+# df_frank = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/game-data_frank.csv')
 
-summoner_name = 'Frank Drebin'
-if summoner_name == 'bewareoftraps':
-    df = df_beware.copy()
-if summoner_name == 'Frank Drebin':
-    df = df_frank.copy()
+# summoner_name = 'Frank Drebin'
+# if summoner_name == 'bewareoftraps':
+#     df = df_beware.copy()
+# if summoner_name == 'Frank Drebin':
+#     df = df_frank.copy()
 
-df['KDA'] = np.where(df['deaths']>0, (df['kills'] + df['assists']) / df['deaths'], df['kills'] + df['assists'])
-df = df.round({'KDA': 1})
+# df['KDA'] = np.where(df['deaths']>0, (df['kills'] + df['assists']) / df['deaths'], df['kills'] + df['assists'])
+# df = df.round({'KDA': 1})
 
-df['gameCreation_dt'] = pd.to_datetime(df['gameCreation'], unit='ms') 
+# df['gameCreation_dt'] = pd.to_datetime(df['gameCreation'], unit='ms') 
 
-df['dmgShare'] = df['dmgShare'] * 100
-df = df.round({'dmgShare': 1})
+# df['dmgShare'] = df['dmgShare'] * 100
+# df = df.round({'dmgShare': 1})
 
-gametime = df['gameDuration'].sum()
-day, hour, minutes, seconds = import_func.get_gametime(gametime)
-df['gameDuration'] = df['gameDuration'] / 60
-df = df.round({'gameDuration': 1})
+# gametime = df['gameDuration'].sum()
+# day, hour, minutes, seconds = import_func.get_gametime(gametime)
+# df['gameDuration'] = df['gameDuration'] / 60
+# df = df.round({'gameDuration': 1})
 
 
-df['win'] = df['win'].astype(int)
+# df['win'] = df['win'].astype(int)
 
 
 
 # merge with champion dataframe ---------------------------------------------------------------
 
-df_champions = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions.csv')
-df_champions = df_champions.sort_values(by='champion')
+# df_champions = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions.csv')
+# df_champions = df_champions.sort_values(by='champion')
 
-lst_champ_names = df_champions.champion.values
-df = df.merge(df_champions, how = 'inner', on = 'championId')
+# lst_champ_names = df_champions.champion.values
+# df = df.merge(df_champions, how = 'inner', on = 'championId')
 
 
 
 # ------------------------------------------------------------
 
-column_list = ['win', 'championId', 'champion', 'kills', 'deaths', 'assists', 'item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'KDA', 'largestMultiKill', 'totalDamageDealtToChampions', 'totalHeal', 'damageDealtToTurrets', 'totalDamageTaken', 'goldEarned', 'totalMinionsKilled', 'gameDuration', 'gameCreation',  'gameCreation_dt', 'dmgShare', 'duo']
-df = df[column_list]
+# column_list = ['win', 'championId', 'champion', 'kills', 'deaths', 'assists', 'item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'KDA', 'largestMultiKill', 'totalDamageDealtToChampions', 'totalHeal', 'damageDealtToTurrets', 'totalDamageTaken', 'goldEarned', 'totalMinionsKilled', 'gameDuration', 'gameCreation',  'gameCreation_dt', 'dmgShare', 'duo']
+# df = df[column_list]
 
 
-df['numberOfGames'] = 1 # dummie column, dropped later
+# df['numberOfGames'] = 1 # dummie column, dropped later
 
 
 # creating the dataframe per champ -----------------------------------------------------------------------------------------
 
-df_dum = df.copy()
-df_dum = df_dum.drop( columns = ['gameCreation', 'gameCreation_dt','duo'] )
-dict_agg = { key: 'mean' for key in df_dum.columns}
-dict_agg['champion'] = 'first'
-dict_agg['numberOfGames'] = 'sum'
-dict_agg['win'] = 'mean'
+# df_dum = df.copy()
+# df_dum = df_dum.drop( columns = ['gameCreation', 'gameCreation_dt','duo'] )
+# dict_agg = { key: 'mean' for key in df_dum.columns}
+# dict_agg['champion'] = 'first'
+# dict_agg['numberOfGames'] = 'sum'
+# dict_agg['win'] = 'mean'
 
 
-df_per_champ = df_dum.groupby('championId')[df_dum.columns.values].agg( dict_agg ).reset_index(drop=True)
-df_per_champ['win'] = df_per_champ['win'] * 100
-df_per_champ = df_per_champ.round({key: 1 for key in df_per_champ.columns})
+# df_per_champ = df_dum.groupby('championId')[df_dum.columns.values].agg( dict_agg ).reset_index(drop=True)
+# df_per_champ['win'] = df_per_champ['win'] * 100
+# df_per_champ = df_per_champ.round({key: 1 for key in df_per_champ.columns})
 
-df_both_players = import_func.makeJoinPerChampTable(df_frank, df_beware, df_champions)
+# df_both_players = import_func.makeJoinPerChampTable(df_frank, df_beware, df_champions)
 
 
 # end building the per champ table ------------------------------------------------------------------------------------
 
 # df = df.drop( columns = ['numberOfGames'] )
 
-# start creating the figures ------------------------------------------------------------------------------------------
-
-# fig = px.scatter(df, x='KDA', y="dmgShare", color="win", hover_data=['champion'])
-# fig2 = px.bar(df_per_champ, x  = 'championId', y = 'win', hover_data=['champion'])
-# fig2 = px.scatter(df_per_champ, x  = 'win', y = 'KDA', color = 'dmgShare', hover_data=['champion', 'dmgShare'], size= 'numberOfGames')
-
-
-#end figure creation -------------------------------------------------------------------------------------
 
 # create the final table used for displaying and drawing -------------------------------------------------
 
 
-df = import_func.make_display_table(df)
+# df = import_func.make_display_table(df)
 
-df_per_champ = import_func.make_per_champ_display_table(df_per_champ)
+# df_per_champ = import_func.make_per_champ_display_table(df_per_champ)
 
-df_total_per_champ = df_total_per_champ.drop( columns = ['Unnamed: 0'] )
-df_total_per_champ = import_func.make_per_champ_display_table(df_total_per_champ)
+# df_total_per_champ = df_total_per_champ.drop( columns = ['Unnamed: 0'] )
+# df_total_per_champ = import_func.make_per_champ_display_table(df_total_per_champ)
 
-tooltip_data = import_func.generate_tooltip_data(df)
+# tooltip_data = import_func.generate_tooltip_data(df)
 
 
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 external_stylesheets = ['C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/style.css']
 
+summoner_name = ''
+gametime, day, hour, minutes, seconds = 0, 0, 0, 0, 0
+lst_champ_names = []
+tooltip_data = ''
+column_list = ['item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'Win', 'Champion','K','D', 'A', 'KDA' ,'Largest Multi Kill','Damage To Champions', 'Heal', 'Damage To Turrets', 'Damage Taken', 'Gold', 'CS', 'gameDuration', 'gameCreation_dt', 'Damage Share', 'Duo']
+column_list_per_champ = ['Champion', 'Number of Games', 'Win Percentage','K','D', 'A', 'KDA' ,'Largest Multi Kill','Damage To Champions', 'Heal', 'Damage To Turrets', 'Damage Taken', 'Gold', 'CS', 'gameDuration', 'Damage Share']
+df = pd.DataFrame(columns = column_list)
+df_frank = pd.DataFrame(columns = column_list)
+df_beware = pd.DataFrame(columns = column_list)
+df_per_champ = pd.DataFrame(columns = column_list_per_champ)
+# df_total_per_champ = pd.DataFrame(columns = column_list_per_champ)
+df_champions = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions.csv')
+df_total_per_champ = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions_mean.csv')
+df_total_per_champ = df_total_per_champ.drop( columns = ['Unnamed: 0'] )
+df_total_per_champ = import_func.make_per_champ_display_table(df_total_per_champ)
+
+columns_list_both_players = ['championId1', 'champion1', 'win1', 'numberOfGames1', 'championId2', 'champion2', 'win2', 'numberOfGames2']
+df_both_players = pd.DataFrame(columns = columns_list_both_players)
 
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets) #, external_stylesheets=external_stylesheets
@@ -123,30 +133,34 @@ app.layout = html.Div( children = [
     ),
 
     html.Button(id='submit-button-state', n_clicks=0, children='Submit'),
-    html.Div(id='output-state'),
+    # html.Div(id='output-state'),
 
     html.H1(
-        children= 'Hello '+ summoner_name + '!',
+        # children= 'Hello '+ summoner_name + '!',
         className='test',
         style={
             'textAlign': 'center',
             'color': 'red' ##7FDBFF
-        }
+        },
+        id = 'welcome_message'
     ),
 
     html.H2(
-        children= 'You wasted ' + str(day) + ' days ' + str(hour) + ' hours ' + str(minutes) + ' minutes ' + str(seconds) + ' in the last 2 years',
         style={
             'textAlign': 'center',
             'color': '#7FDBFF'
-        }
+        },
+        id = 'wasted_message'
     ),
+
+    html.Button(id='refresh-button-state', n_clicks=0, children='Refresh Data'),
+
 
     dcc.Dropdown(
         id='champ_sel_dropdown',
-        options=[
-            {'label': champ, 'value': champ} for champ in df_champions.champion.unique()
-        ],
+        # options=[
+        #     {'label': champ, 'value': champ} for champ in df_champions.champion.unique()
+        # ],
     ),
 
     html.Img(
@@ -270,9 +284,9 @@ app.layout = html.Div( children = [
     dcc.Slider(
         id='min_num_games_slider',
         min=1,
-        max=df_per_champ['Number of Games'].max(),
+        max=10 if df_per_champ.empty else df_per_champ['Number of Games'].max(),
         value=0,
-        marks={str(num): str(num) for num in range(1,df_per_champ['Number of Games'].max() )},
+        # marks={str(num): str(num) for num in range(1, 10) if df_per_champ.empty else str(num): str(num) for num in range(1, df_per_champ['Number of Games'].max() ) }, # df_per_champ['Number of Games'].max()
         step=None
     ),
 
@@ -307,9 +321,32 @@ app.layout = html.Div( children = [
 ])
 
 @app.callback(
+    Output('min_num_games_slider', 'marks'),
+    [Input('refresh-button-state', 'n_clicks')] )
+def update_slider_marks(n_clicks):
+
+
+    df_per_champ_slider = df_per_champ.copy()
+    if df_per_champ.empty:
+        markings={str(num): str(num) for num in range(1,   10) }
+    else:
+        
+        print(df_per_champ_slider['Number of Games'])
+        maxi = int(df_per_champ_slider['Number of Games'].max())
+        markings={str(num): str(num) for num in range(1,   maxi) }
+
+    print(df_per_champ_slider.shape)
+    print(df_per_champ_slider.columns)
+
+
+    return markings
+
+
+@app.callback(
     Output('text_summary', 'children'),
-    [Input('champ_sel_dropdown', 'value')] )
-def update_summary(champ_name):
+    [Input('champ_sel_dropdown', 'value'),
+    Input('refresh-button-state', 'n_clicks')] )  
+def update_summary(champ_name, n_clicks):
 
     df5 = df.copy()
     df_per_champ2 = df_per_champ.copy()
@@ -351,8 +388,9 @@ def update_summary(champ_name):
 
 @app.callback(
     Output('img_champ_summary', 'src'),
-    [Input('champ_sel_dropdown', 'value')] )
-def update_img(champ_name):
+    [Input('champ_sel_dropdown', 'value'), 
+    Input('refresh-button-state', 'n_clicks')] )  
+def update_img(champ_name, n_clicks):
 
     if champ_name in lst_champ_names:
         string_img = 'http://ddragon.leagueoflegends.com/cdn/10.7.1/img/champion/' + champ_name + '.png'
@@ -365,12 +403,16 @@ def update_img(champ_name):
 
 @app.callback(
     Output('per_champ_graph', 'figure'),
-    [Input('min_num_games_slider', 'value')])
-def update_graph(min_num):
+    [Input('min_num_games_slider', 'value'),
+    Input('refresh-button-state', 'n_clicks')] )  
+def update_graph(min_num, n_clicks):
 
     df1 = df_per_champ.copy()
     df1 = df_per_champ.loc[ df_per_champ['Number of Games'] > min_num ]
-    fig = px.scatter(df1, x  = 'Win Percentage', y = 'KDA', color = 'Damage Share', hover_data=['Champion', 'Damage Share'], size= 'Number of Games')
+    if df1.empty:
+        fig = px.scatter()
+    else:
+        fig = px.scatter(df1, x  = 'Win Percentage', y = 'KDA', color = 'Damage Share', hover_data=['Champion', 'Damage Share'], size= 'Number of Games')
     return fig
 
 
@@ -378,8 +420,9 @@ def update_graph(min_num):
 
 @app.callback(
     Output('per_champ_graph_total', 'figure'),
-    [Input('min_num_games_slider', 'value')])
-def update_graph(min_num):
+    [Input('min_num_games_slider', 'value'),
+    Input('refresh-button-state', 'n_clicks')] )  
+def update_graph(min_num, n_clicks):
 
     df_1 = df_total_per_champ.copy()
     # df1 = df_per_champ.loc[ df_per_champ['Number of Games'] > min_num ]
@@ -391,8 +434,9 @@ def update_graph(min_num):
 
 @app.callback(
     Output('table_per_champ', 'data'),
-    [Input('min_num_games_slider', 'value')])
-def update_per_champ_table(min_num):
+    [Input('min_num_games_slider', 'value'),
+    Input('refresh-button-state', 'n_clicks')] )  
+def update_per_champ_table(min_num, n_clicks):
 
     df7 = df_per_champ.copy()
     df7 = df_per_champ.loc[ df_per_champ['Number of Games'] > min_num ]
@@ -405,12 +449,16 @@ def update_per_champ_table(min_num):
 
 @app.callback(
     Output('graph_player_comparison', 'figure'),
-    [Input('min_num_games_slider', 'value')])
-def update_graph3(min_num):
+    [Input('min_num_games_slider', 'value'),
+    Input('refresh-button-state', 'n_clicks')] )  
+def update_graph3(min_num, n_clicks):
 
     df4 = df_both_players.copy()
     df4 = df4.loc[ (df4['numberOfGames1'] > min_num) & (df4['numberOfGames2'] > min_num) ]
-    fig = px.scatter(df4, x='champion1', y='diff', hover_data=['champion1'], color = 'win1')
+    if df4.empty:
+        fig = px.scatter()
+    else:
+        fig = px.scatter(df4, x='champion1', y='diff', hover_data=['champion1'], color = 'win1')
 
     return fig
 
@@ -421,25 +469,31 @@ def update_graph3(min_num):
     Output('main_table', 'tooltip_data'),
     Output('main_table', 'columns')],
     [Input('champ_sel_dropdown', 'value'),
-    Input('main_table', 'sort_by')] )
-def update_table(champ_name, sort_by):
+    Input('main_table', 'sort_by'),
+    Input('refresh-button-state', 'n_clicks')] )  
+def update_table(champ_name, sort_by, n_clicks):
 
     df2 = df.copy()
 
     if champ_name in lst_champ_names:
         df2 = df2.loc[ df2['Champion'] == champ_name ]
 
-    if len(sort_by):
-        df2 = df2.sort_values(
-            by = sort_by[0]['column_id'],
-            ascending=sort_by[0]['direction'] == 'asc',
-        )
-    else:
-        # No sort is applied
-        df2 = df2
+    if df2.empty:
+        data_dict = {}
+    else: 
+        if len(sort_by):
+            df2 = df2.sort_values(
+                by = sort_by[0]['column_id'],
+                ascending=sort_by[0]['direction'] == 'asc',
+            )
+        else:
+            # No sort is applied
+            df2 = df2
 
-    df2['gameCreation_dt'] = df2['gameCreation_dt'].dt.strftime('%d/%m/%Y %H:%M')
+        df2['gameCreation_dt'] = df2['gameCreation_dt'].dt.strftime('%d/%m/%Y %H:%M')
+
     tooltip_data = import_func.generate_tooltip_data(df2)
+
     df2 = df2.drop( columns = ['item0', 'item1', 'item2', 'item3', 'item4', 'item5'] )
     columns= [{"name": i, "id": i} for i in df2.columns]
 
@@ -455,13 +509,17 @@ def update_table(champ_name, sort_by):
      Input('main_graph_x_axis', 'value'),
      Input('main_graph_y_axis', 'value'),
      Input('main_graph_color', 'value'),
-     Input('main_graph_size', 'value') ] )
-def update_graph2(champ_name, x_axis_name, y_axis_name, color_name, size_name):
+     Input('main_graph_size', 'value'),
+     Input('refresh-button-state', 'n_clicks') ] )
+def update_graph2(champ_name, x_axis_name, y_axis_name, color_name, size_name, n_clicks):
 
     df3 = df.copy()
     if champ_name in lst_champ_names:
         df3 = df3.loc[ df3['Champion'] == champ_name ]
-    fig = px.scatter(df3, x  = x_axis_name, y = y_axis_name, color = color_name, hover_data=['Champion', 'Damage Share'], size= size_name)
+    if df3.empty:
+        fig = px.scatter()
+    else:
+        fig = px.scatter(df3, x  = x_axis_name, y = y_axis_name, color = color_name, hover_data=['Champion', 'Damage Share'], size= size_name)
 
     return fig
 
@@ -469,8 +527,9 @@ def update_graph2(champ_name, x_axis_name, y_axis_name, color_name, size_name):
 
 @app.callback(
     Output('spider_web_graph', 'figure'),
-    [Input('champ_sel_dropdown', 'value')] )
-def update_spider_graph(champ_name):
+    [Input('champ_sel_dropdown', 'value'),
+    Input('refresh-button-state', 'n_clicks')] ) 
+def update_spider_graph(champ_name, n_clicks):
 
     df_total_per_champ_1 = df_total_per_champ.copy()
     df_per_champ_1 = df_per_champ.copy()
@@ -483,44 +542,56 @@ def update_spider_graph(champ_name):
         df_per_champ_1 = df_per_champ_1.loc[ df_per_champ_1['Champion'] == 'all' ]
 
 
-    df_total_per_champ_1 = df_total_per_champ_1.drop( columns = ['Champion', 'Number of Games'] )
-    df_per_champ_1 = df_per_champ_1.drop( columns = ['Champion', 'Number of Games'] )
+    if df_per_champ_1.empty:
+        fig = px.line_polar()
+    else:
+        df_total_per_champ_1 = df_total_per_champ_1.drop( columns = ['Champion', 'Number of Games'] )
+        df_per_champ_1 = df_per_champ_1.drop( columns = ['Champion', 'Number of Games'] )
 
-    lst_div = [ a/b for (a,b) in zip(df_per_champ_1.iloc[0], df_total_per_champ_1.iloc[0]) ]
-    lst_final = [ {'r': value1, 'theta': value2} for (value1, value2) in zip(lst_div, df_per_champ_1.columns) ]
-    df_final = pd.DataFrame.from_dict(lst_final)
+        lst_div = [ a/b for (a,b) in zip(df_per_champ_1.iloc[0], df_total_per_champ_1.iloc[0]) ]
+        lst_final = [ {'r': value1, 'theta': value2} for (value1, value2) in zip(lst_div, df_per_champ_1.columns) ]
+        df_final = pd.DataFrame.from_dict(lst_final)
 
-    axis_min = np.min( np.array( (0.5, np.min(lst_div)) ) )
-    axis_max = np.max( np.array( (1.3, np.max(lst_div)) ) )
+        axis_min = np.min( np.array( (0.5, np.min(lst_div)) ) )
+        axis_max = np.max( np.array( (1.3, np.max(lst_div)) ) )
 
-    fig = px.line_polar(df_final, r='r', theta='theta', line_close=True)
-    fig.update_layout(
-        polar = dict(
-            radialaxis_range = [axis_min, axis_max]
+        fig = px.line_polar(df_final, r='r', theta='theta', line_close=True)
+        fig.update_layout(
+            polar = dict(
+                radialaxis_range = [axis_min, axis_max]
+            )
         )
-    )
-    # fig.update_traces(fill='toself')
+        # fig.update_traces(fill='toself')
     return fig
 
 # -------------------------------------------------------------------------
 
-@app.callback( Output('output-state', 'children'),
+@app.callback( [Output('welcome_message', 'children'),
+                Output('wasted_message', 'children'),
+                Output('champ_sel_dropdown', 'options')],
               [Input('submit-button-state', 'n_clicks')],
               [State('summoner_name_input', 'value')]  )
 def update_output(n_clicks, summoner_name_input):
 
+    global df, gametime, lst_champ_names, df_both_players, df_per_champ, tooltip_data, df_frank, df_beware
+    day, hour, minutes, seconds = 0, 0, 0, 0
     df_frank = pd.DataFrame()
     df_beware = pd.DataFrame()
 
     if summoner_name_input is not None:
         df_frank, df_beware = game_scraping.main(summoner_name_input)
+        df, gametime, lst_champ_names, df_both_players, df_per_champ, tooltip_data, day, hour, minutes, seconds = import_func.define_variables(df_frank, df_beware, df_total_per_champ, df_champions, summoner_name_input)
+        df = df.sort_values( by = 'Champion' )
 
-    df, gametime, lst_champ_names, df_both_players, df_per_champ, df_total_per_champ, tooltip_data = import_func.define_variables(df_frank, df_beware, summoner_name_input)
+    if summoner_name_input is not None:
+        return1 = 'Hello '+ str(summoner_name_input) + '!'
+    else:
+        return1 = 'Hello summoner!'
+    return2 = 'You wasted ' + str(day) + ' days ' + str(hour) + ' hours ' + str(minutes) + ' minutes ' + str(seconds) + ' in the last 2 years'
+    return3 = [ {'label': champ, 'value': champ} for champ in df.Champion.unique() ]
+        # print('i used the callback')
 
-    return u'''
-        The external dataframe has shape "{}",
-        Input 1 is "{}"
-    '''.format(df_frank.shape, summoner_name_input)
+    return return1, return2, return3
 
 
 

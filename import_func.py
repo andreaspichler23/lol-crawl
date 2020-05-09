@@ -51,7 +51,7 @@ def make_display_table(dataframe):
     df = df.rename( columns = {'totalMinionsKilled': 'CS', 'dmgShare': 'Damage Share'} )
     df = df.rename( columns = {'champion': 'Champion', 'win': 'Win', 'largestMultiKill': 'Largest Multi Kill', 'duo': 'Duo'} )
 
-
+    
 
     return df
 
@@ -130,8 +130,9 @@ def generate_tooltip_data(df):
     return tooltip_data
 
 
-def define_variables(df_frank, df_beware, summoner_name_input):
+def define_variables(df_frank, df_beware, df_total_per_champ, df_champions, summoner_name_input):
 
+    df = pd.DataFrame()
 
     if summoner_name_input == 'bewareoftraps':
         df = df_beware.copy()
@@ -157,8 +158,7 @@ def define_variables(df_frank, df_beware, summoner_name_input):
 
 
     # merge with champion dataframe ---------------------------------------------------------------
-
-    df_champions = pd.read_csv('C:/Users/U2JD7FU/Desktop/Private/Programmieren/Python/Lol/champions.csv')
+    # print(df_champions.dtypes)
     df_champions = df_champions.sort_values(by='champion')
 
     lst_champ_names = df_champions.champion.values
@@ -195,12 +195,12 @@ def define_variables(df_frank, df_beware, summoner_name_input):
 
     df_per_champ = make_per_champ_display_table(df_per_champ)
 
-    df_total_per_champ = df_total_per_champ.drop( columns = ['Unnamed: 0'] )
-    df_total_per_champ = make_per_champ_display_table(df_total_per_champ)
+    # print(df_total_per_champ.dtypes)
+    
 
     tooltip_data = generate_tooltip_data(df)
 
-    return df, gametime, lst_champ_names, df_both_players, df_per_champ, df_total_per_champ, tooltip_data
+    return df, gametime, lst_champ_names, df_both_players, df_per_champ, tooltip_data, day, hour, minutes, seconds
 
 # def generate_table(dataframe, max_rows=10):
 #     return html.Table([
