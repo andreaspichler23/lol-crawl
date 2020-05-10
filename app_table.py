@@ -283,9 +283,9 @@ app.layout = html.Div( children = [
 
     dcc.Slider(
         id='min_num_games_slider',
-        min=1,
-        max=10 if df_per_champ.empty else df_per_champ['Number of Games'].max(),
-        value=0,
+        # min=1,
+        # max=10 if df_per_champ.empty else df_per_champ['Number of Games'].max(),
+        value=1,
         # marks={str(num): str(num) for num in range(1, 10) if df_per_champ.empty else str(num): str(num) for num in range(1, df_per_champ['Number of Games'].max() ) }, # df_per_champ['Number of Games'].max()
         step=None
     ),
@@ -321,7 +321,9 @@ app.layout = html.Div( children = [
 ])
 
 @app.callback(
-    Output('min_num_games_slider', 'marks'),
+    [Output('min_num_games_slider', 'marks'),
+    Output('min_num_games_slider', 'min'),
+    Output('min_num_games_slider', 'max')],
     [Input('refresh-button-state', 'n_clicks')] )
 def update_slider_marks(n_clicks):
 
@@ -329,17 +331,20 @@ def update_slider_marks(n_clicks):
     df_per_champ_slider = df_per_champ.copy()
     if df_per_champ.empty:
         markings={str(num): str(num) for num in range(1,   10) }
+        maxi = 10
     else:
         
         print(df_per_champ_slider['Number of Games'])
         maxi = int(df_per_champ_slider['Number of Games'].max())
         markings={str(num): str(num) for num in range(1,   maxi) }
 
-    print(df_per_champ_slider.shape)
-    print(df_per_champ_slider.columns)
+    mini = 1
+
+    print('mini', mini)
+    print('maxi', maxi)
 
 
-    return markings
+    return markings, mini, maxi
 
 
 @app.callback(
